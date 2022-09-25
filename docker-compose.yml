@@ -1,0 +1,74 @@
+version: '3'
+services:
+  #PHP Service
+  app:
+    image: gauravgn90/my-laravel-app-php:v1
+    container_name: app
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www
+    links:
+      - webserver
+      - db
+    depends_on:
+      - webserver
+      - db
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+      WEBSITES_ENABLE_APP_SERVICE_STORAGE: TRUE
+    networks:
+      - app-network
+    volumes:
+      - app_and_webserver:/var/www
+
+  #Nginx Service
+  webserver:
+    image: gauravgn90/my-laravel-app-nginx:v1
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    environment:
+      WEBSITES_ENABLE_APP_SERVICE_STORAGE: TRUE
+    depends_on:
+      - db
+    ports:
+      - "8182:80"
+      - "444:443"
+    networks:
+      - app-network
+    volumes:
+      - app_and_webserver:/var/www
+      
+  #MySQL Service
+  db:
+    image: gauravgn90/my-laravel-app-mysql:v1
+    container_name: db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: laravel_with_docker
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+      MYSQL_USER: "root"
+      WEBSITES_ENABLE_APP_SERVICE_STORAGE: TRUE
+    volumes:
+      - lbdata:/var/lib/mysql/
+    networks:
+      - app-network
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+
+#Volumens
+volumes:
+  lbdata:
+    driver: local
+  app_and_webserver:
+    driver: local
